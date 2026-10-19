@@ -66,6 +66,26 @@ $env:SESSION_SERVICE_ADDR = "192.168.1.20:50051"; pnpm test
 
 El test registra un usuario nuevo y recorre login, validate y logout, más los casos de error. Imprime un `ok` por cada paso.
 
+## Cómo funciona la sesión
+
+La sesión vive en dos lugares: en la cookie `session_token` que guarda la app que usa el wrapper (en la `mini-app`, dura 30 min: constante `COOKIE` de `app.js`) y en la fila de la tabla `sessions` del PostgreSQL de `session-server`. Ni el wrapper ni la app guardan sesiones en memoria.
+
+| Situación | ¿Sigue la sesión? | Por qué |
+|---|---|---|
+| Recargar la página | Sí | `validateSession(token)` encuentra la fila |
+| Reiniciar la app | Sí | La app no guardaba nada |
+| Reiniciar `session-server` | Sí | La fila está en PostgreSQL, no en memoria |
+| Cerrar la pestaña o el navegador | Sí, hasta 30 min | La cookie tiene `maxAge` |
+| Pasan 30 min desde el login | No | `ValidateSession` exige `expires_at > now()` → `UNAUTHENTICATED` |
+| `logout(token)` | No | El servidor borra la fila y la app borra la cookie |
+
+En FlowSheet, en cambio, la sesión vivía en la memoria de `express-session` y se perdía al reiniciar el backend.
+
+## Posibles mejoras
+
+1. **Cerrar la sesión al cerrar el navegador** (cliente, Persona B): en la app, quitar `maxAge` de la cookie para que sea una cookie de sesión, que el navegador olvida al cerrarse. Hoy no se hace porque la Regla B5 del plan fija 30 min. Ojo: Chrome puede restaurarla si está activado "Continuar donde lo dejaste".
+2. **Limpiar las sesiones vencidas** (servidor, Persona A): las sesiones que vencen sin `logout` se quedan en la tabla `sessions`. `ValidateSession` las ignora, pero se acumulan. Se podrían borrar cada cierto tiempo, o en cada Login, con `DELETE FROM sessions WHERE expires_at < now();`.
+
 ## Contrato
 
 `proto/session.proto` es una **copia** del original en `session-server`, y aquí no se edita. Las reglas están en [CONTRIBUTING.md](CONTRIBUTING.md).
