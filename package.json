@@ -1,0 +1,19 @@
+{
+  "name": "session-client",
+  "version": "1.0.0",
+  "description": "Wrapper de SessionService: esconde gRPC detrás de 4 métodos que devuelven Promesas",
+  "type": "module",
+  "exports": "./sessionClient.js",
+  "files": [
+    "sessionClient.js",
+    "proto"
+  ],
+  "scripts": {
+    "test": "node --env-file-if-exists=.env test/wrapper.test.js"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "@grpc/grpc-js": "^1.14.6",
+    "@grpc/proto-loader": "^0.8.1"
+  }
+}

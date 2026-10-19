@@ -1,0 +1,3 @@
+# protobufjs trae un script de build opcional; no hace falta (probado en el plan, sección 7)
+allowBuilds:
+  protobufjs: false
